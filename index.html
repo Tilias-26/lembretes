@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audens Lembretes</title>
+<style>
+  :root {
+    --bg: #0f0f10; --surface: #1a1a1d; --surface2: #242428;
+    --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16);
+    --text: #f0f0ee; --muted: #888885;
+    --accent: #7c6af7; --accent-bg: rgba(124,106,247,0.12); --accent-border: rgba(124,106,247,0.3);
+    --danger: #e05252; --danger-bg: rgba(224,82,82,0.1);
+    --success: #4caf82; --success-bg: rgba(76,175,130,0.1);
+    --warning: #e09a30; --warning-bg: rgba(224,154,48,0.1);
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; padding: 2rem 1rem; }
+  .container { max-width: 680px; margin: 0 auto; }
+  .header { display: flex; align-items: center; gap: 12px; margin-bottom: 2rem; }
+  .logo { width: 36px; height: 36px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .header h1 { font-size: 20px; font-weight: 600; }
+  .header p { font-size: 13px; color: var(--muted); margin-top: 1px; }
+  .auth-bar { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; gap: 12px; flex-wrap: wrap; }
+  .auth-status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .dot.green { background: var(--success); box-shadow: 0 0 6px var(--success); }
+  .dot.red { background: var(--danger); }
+  .btn { padding: 8px 16px; border-radius: 8px; border: 0.5px solid var(--border-strong); background: var(--surface2); color: var(--text); font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+  .btn:hover { background: rgba(255,255,255,0.06); }
+  .btn.primary { background: var(--accent); border-color: transparent; color: #fff; }
+  .btn.primary:hover { background: #6b59e8; }
+  .btn.danger { background: var(--danger-bg); border-color: rgba(224,82,82,0.3); color: var(--danger); }
+  .btn.danger:hover { background: rgba(224,82,82,0.18); }
+  .input-section { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 1.5rem; }
+  .input-label { font-size: 12px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+  textarea { width: 100%; background: var(--surface2); border: 0.5px solid var(--border); border-radius: 8px; color: var(--text); font-size: 15px; font-family: inherit; padding: 12px 14px; resize: none; min-height: 80px; outline: none; transition: border-color 0.15s; line-height: 1.5; }
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--muted); }
+  .datetime-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .field-group { display: flex; flex-direction: column; gap: 6px; }
+  .field-group label { font-size: 12px; color: var(--muted); }
+  input[type="date"], input[type="time"] { background: var(--surface2); border: 0.5px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; font-family: inherit; padding: 9px 12px; outline: none; width: 100%; transition: border-color 0.15s; color-scheme: dark; }
+  input[type="date"]:focus, input[type="time"]:focus { border-color: var(--accent); }
+  .actions { display: flex; gap: 10px; margin-top: 14px; }
+  .actions .btn { flex: 1; justify-content: center; display: flex; align-items: center; gap: 6px; }
+  .notice { border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; }
+  .notice.info { background: var(--accent-bg); border: 0.5px solid var(--accent-border); color: #b5adff; }
+  .notice.warn { background: var(--warning-bg); border: 0.5px solid rgba(224,154,48,0.3); color: var(--warning); }
+  .notice.ok { background: var(--success-bg); border: 0.5px solid rgba(76,175,130,0.3); color: var(--success); }
+  .notice.err { background: var(--danger-bg); border: 0.5px solid rgba(224,82,82,0.3); color: var(--danger); }
+  .notice span { flex: 1; }
+  .reminders-list { display: flex; flex-direction: column; gap: 10px; }
+  .reminder-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px 18px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; transition: border-color 0.2s; }
+  .reminder-card.active { border-color: var(--accent-border); }
+  .reminder-card.ringing { border-color: rgba(224,82,82,0.5); animation: pulse-red 1s ease-in-out infinite; }
+  @keyframes pulse-red { 0%, 100% { box-shadow: 0 0 0 0 rgba(224,82,82,0); } 50% { box-shadow: 0 0 0 4px rgba(224,82,82,0.15); } }
+  .reminder-info { flex: 1; min-width: 0; }
+  .reminder-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .reminder-meta { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge.scheduled { background: var(--accent-bg); color: #b5adff; border: 0.5px solid var(--accent-border); }
+  .badge.ringing { background: var(--danger-bg); color: var(--danger); border: 0.5px solid rgba(224,82,82,0.3); }
+  .badge.done { background: rgba(255,255,255,0.05); color: var(--muted); border: 0.5px solid var(--border); }
+  .reminder-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+  .icon-btn { width: 32px; height: 32px; border-radius: 6px; border: 0.5px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.15s; }
+  .icon-btn:hover { background: var(--surface2); color: var(--text); }
+  .icon-btn.stop { background: var(--danger-bg); border-color: rgba(224,82,82,0.3); color: var(--danger); font-size: 18px; }
+  .empty { text-align: center; padding: 2.5rem 1rem; color: var(--muted); font-size: 14px; }
+  .api-key-section { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 1.5rem; }
+  .api-key-section h3 { font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+  .api-key-section p { font-size: 12px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+  .api-row { display: flex; gap: 8px; }
+  .api-row input { flex: 1; background: var(--surface2); border: 0.5px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; font-family: inherit; padding: 9px 12px; outline: none; }
+  .section-title { font-size: 12px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; margin-top: 1.5rem; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .alarm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); }
+  .alarm-overlay.visible { display: flex; }
+  .alarm-box { background: var(--surface); border: 1px solid rgba(224,82,82,0.5); border-radius: 16px; padding: 2rem; max-width: 380px; width: 90%; text-align: center; animation: alarm-in 0.3s ease-out; }
+  @keyframes alarm-in { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .alarm-icon { font-size: 40px; margin-bottom: 1rem; animation: ring 0.5s ease-in-out infinite alternate; }
+  @keyframes ring { from { transform: rotate(-15deg); } to { transform: rotate(15deg); } }
+  .alarm-box h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .alarm-box p { font-size: 14px; color: var(--muted); margin-bottom: 1.5rem; line-height: 1.5; }
+  .alarm-box .btn { width: 100%; padding: 12px; font-size: 15px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo">🔔</div>
+    <div>
+      <h1>Lembretes</h1>
+      <p>Fale o que quer lembrar — vai direto pra sua agenda</p>
+    </div>
+  </div>
+
+  <div class="auth-bar">
+    <div class="auth-status">
+      <div class="dot" id="authDot"></div>
+      <span id="authText">Google Calendar não conectado</span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="notifBtn" onclick="requestNotifPermission()">Ativar notificações</button>
+      <button class="btn primary" id="authBtn" onclick="handleAuth()">Conectar Google</button>
+    </div>
+  </div>
+
+  <div class="api-key-section" id="configSection">
+    <h3>⚙️ Configuração do Google Calendar</h3>
+    <p>Cole seu <strong>Client ID</strong> do Google Cloud Console.</p>
+    <div class="api-row">
+      <input type="text" id="clientIdInput" placeholder="xxx.apps.googleusercontent.com" />
+      <button class="btn" onclick="saveClientId()">Salvar</button>
+    </div>
+    <div id="configNotice" style="margin-top:10px"></div>
+  </div>
+
+  <div class="input-section">
+    <div class="input-label">Novo lembrete</div>
+    <textarea id="reminderInput" placeholder="Ex: Reunião com Letícia sobre GMB às 14h amanhã&#10;ou: Ligar pro fornecedor hoje às 18:30&#10;ou: Pagar boleto na sexta de manhã"></textarea>
+    <div class="datetime-row">
+      <div class="field-group">
+        <label>Data (opcional)</label>
+        <input type="date" id="dateInput" />
+      </div>
+      <div class="field-group">
+        <label>Hora (opcional)</label>
+        <input type="time" id="timeInput" />
+      </div>
+    </div>
+    <div id="parseNotice" style="margin-top:12px"></div>
+    <div class="actions">
+      <button class="btn" onclick="parseReminder()">✦ Entender lembrete</button>
+      <button class="btn primary" id="saveBtn" onclick="saveReminder()">Salvar na agenda</button>
+    </div>
+  </div>
+
+  <div class="section-title">Lembretes ativos</div>
+  <div class="reminders-list" id="remindersList">
+    <div class="empty">Nenhum lembrete ainda</div>
+  </div>
+</div>
+
+<div class="alarm-overlay" id="alarmOverlay">
+  <div class="alarm-box">
+    <div class="alarm-icon">🔔</div>
+    <h2 id="alarmTitle">Lembrete!</h2>
+    <p id="alarmDesc"></p>
+    <button class="btn danger" onclick="dismissAlarm()">Desligar alarme</button>
+  </div>
+</div>
+
+<script>
+// ---- CONFIG ----
+const CLIENT_ID_KEY = 'audens_gcal_client_id';
+const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
+const SUPABASE_URL = 'https://pzrfndynbjbyxuqnvgaj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6cmZuZHluYmpieXh1cW52Z2FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MTkyMjYsImV4cCI6MjA5Nzk5NTIyNn0.OgUCt5w5XLOE20rGO61A0s3ZNjn4EU1TvoVhwKzsjdc';
+
+let tokenClient = null;
+let accessToken = null;
+let reminders = [];
+let alarmIntervals = {};
+let currentAlarmId = null;
+let parsedData = null;
+let gsiLoaded = false;
+
+// ---- INIT ----
+window.onload = () => {
+  loadLocalReminders();
+  checkNotifPermission();
+  setDefaultDate();
+  renderReminders();
+
+  const saved = localStorage.getItem(CLIENT_ID_KEY);
+  if (saved) {
+    document.getElementById('clientIdInput').value = saved;
+    document.getElementById('configSection').style.display = 'none';
+    loadGoogleAuthScript();
+  }
+
+  // Sync from Supabase and check dismissed every 30s
+  syncFromSupabase();
+  setInterval(syncFromSupabase, 30000);
+  checkScheduledReminders();
+  setInterval(checkScheduledReminders, 30000);
+};
+
+function setDefaultDate() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('timeInput').value = `${h}:${m}`;
+}
+
+// ---- SUPABASE ----
+async function sbFetch(path, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...(options.headers || {})
+    }
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function saveReminderToSupabase(reminder) {
+  const data = await sbFetch('lembretes', {
+    method: 'POST',
+    body: JSON.stringify({
+      title: reminder.title,
+      status: reminder.status,
+      datetime: reminder.datetime,
+      cal_event_id: reminder.calEventId || null,
+      dismissed: false
+    })
+  });
+  return data?.[0]?.id;
+}
+
+async function updateSupabaseStatus(sbId, status, dismissed = false) {
+  if (!sbId) return;
+  await sbFetch(`lembretes?id=eq.${sbId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, dismissed })
+  });
+}
+
+async function syncFromSupabase() {
+  try {
+    const data = await sbFetch('lembretes?dismissed=eq.true&select=*');
+    if (!data) return;
+    data.forEach(row => {
+      const local = reminders.find(r => r.sbId === row.id);
+      if (local && local.status !== 'done') {
+        // Dismissed remotely (from phone) — stop alarm and delete from calendar
+        clearInterval(alarmIntervals[local.id]);
+        delete alarmIntervals[local.id];
+        local.status = 'done';
+        if (local.calEventId && accessToken) deleteFromGoogleCalendar(local.calEventId);
+        if (currentAlarmId === local.id) {
+          document.getElementById('alarmOverlay').classList.remove('visible');
+          currentAlarmId = null;
+        }
+        saveLocalReminders();
+        renderReminders();
+      }
+    });
+
+    // Also load reminders created on other devices
+    const all = await sbFetch('lembretes?dismissed=eq.false&select=*');
+    if (!all) return;
+    all.forEach(row => {
+      const exists = reminders.find(r => r.sbId === row.id);
+      if (!exists) {
+        const r = {
+          id: 'sb_' + row.id,
+          sbId: row.id,
+          title: row.title,
+          description: row.title,
+          datetime: row.datetime,
+          date: row.datetime?.split('T')[0],
+          time: row.datetime?.split('T')[1]?.slice(0,5),
+          status: row.status || 'scheduled',
+          calEventId: row.cal_event_id,
+          createdAt: row.created_at
+        };
+        reminders.push(r);
+        scheduleAlarm(r);
+      }
+    });
+    saveLocalReminders();
+    renderReminders();
+  } catch(e) {
+    console.warn('Supabase sync error:', e);
+  }
+}
+
+// ---- GOOGLE AUTH ----
+function saveClientId() {
+  const val = document.getElementById('clientIdInput').value.trim();
+  if (!val || !val.includes('apps.googleusercontent.com')) {
+    showNotice('configNotice', 'err', 'Client ID inválido.');
+    return;
+  }
+  localStorage.setItem(CLIENT_ID_KEY, val);
+  showNotice('configNotice', 'ok', '✓ Salvo! Clique em "Conectar Google".');
+  loadGoogleAuthScript();
+}
+
+function loadGoogleAuthScript() {
+  if (gsiLoaded) { initTokenClient(); return; }
+  const script = document.createElement('script');
+  script.src = 'https://accounts.google.com/gsi/client';
+  script.onload = () => { gsiLoaded = true; initTokenClient(); };
+  document.head.appendChild(script);
+}
+
+function initTokenClient() {
+  const clientId = localStorage.getItem(CLIENT_ID_KEY);
+  if (!clientId || !window.google) return;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: clientId,
+    scope: SCOPES,
+    callback: (resp) => {
+      if (resp.error) { alert('Erro Google: ' + resp.error); return; }
+      accessToken = resp.access_token;
+      setAuthState(true);
+    }
+  });
+}
+
+function handleAuth() {
+  const clientId = localStorage.getItem(CLIENT_ID_KEY);
+  if (!clientId) {
+    document.getElementById('configSection').style.display = 'block';
+    showNotice('configNotice', 'warn', 'Configure o Client ID primeiro.');
+    return;
+  }
+  if (!gsiLoaded) { loadGoogleAuthScript(); setTimeout(() => tokenClient?.requestAccessToken(), 1500); return; }
+  if (!tokenClient) initTokenClient();
+  setTimeout(() => tokenClient?.requestAccessToken(), 100);
+}
+
+function setAuthState(connected) {
+  document.getElementById('authDot').className = 'dot ' + (connected ? 'green' : '');
+  document.getElementById('authText').textContent = connected ? 'Google Calendar conectado' : 'Google Calendar não conectado';
+  document.getElementById('authBtn').textContent = connected ? 'Reconectar' : 'Conectar Google';
+}
+
+function checkNotifPermission() {
+  const btn = document.getElementById('notifBtn');
+  if (!('Notification' in window)) { btn.style.display = 'none'; return; }
+  if (Notification.permission === 'granted') {
+    btn.textContent = '✓ Notificações ativas';
+    btn.style.opacity = '0.5';
+    btn.onclick = null;
+  }
+}
+
+function requestNotifPermission() {
+  Notification.requestPermission().then(() => checkNotifPermission());
+}
+
+// ---- PARSE ----
+async function parseReminder() {
+  const text = document.getElementById('reminderInput').value.trim();
+  if (!text) { showNotice('parseNotice', 'warn', 'Digite o lembrete primeiro.'); return; }
+
+  const btn = event.target;
+  btn.innerHTML = '<span class="spinner"></span> Processando...';
+  btn.disabled = true;
+
+  const today = new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const now = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const dateOverride = document.getElementById('dateInput').value;
+  const timeOverride = document.getElementById('timeInput').value;
+
+  const prompt = `Hoje é ${today}, ${now}. Extraia as informações do lembrete abaixo.
+${dateOverride ? 'Data manual: ' + dateOverride : ''}
+${timeOverride ? 'Hora manual: ' + timeOverride : ''}
+Texto: "${text}"
+Responda APENAS JSON válido sem markdown:
+{"title":"título curto (máx 60 chars)","description":"descrição completa","date":"YYYY-MM-DD","time":"HH:MM","confidence":"alta|media|baixa"}
+Regras: sem data = hoje; sem hora = 09:00; data/hora manual tem prioridade.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 400, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await resp.json();
+    const raw = data.content?.[0]?.text || '';
+    parsedData = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+    const dt = new Date(`${parsedData.date}T${parsedData.time}:00`);
+    const formatted = dt.toLocaleString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' });
+    const confColor = parsedData.confidence === 'alta' ? 'ok' : 'info';
+    showNotice('parseNotice', confColor, `✓ Entendido: <strong>${parsedData.title}</strong><br>📅 ${formatted}`);
+    document.getElementById('dateInput').value = parsedData.date;
+    document.getElementById('timeInput').value = parsedData.time;
+  } catch(e) {
+    const date = dateOverride || new Date().toISOString().split('T')[0];
+    const time = timeOverride || '09:00';
+    parsedData = { title: text.slice(0,60), description: text, date, time, confidence: 'baixa' };
+    showNotice('parseNotice', 'warn', 'Processado sem IA. Verifique data e hora.');
+  } finally {
+    btn.innerHTML = '✦ Entender lembrete';
+    btn.disabled = false;
+  }
+}
+
+// ---- SAVE ----
+async function saveReminder() {
+  if (!parsedData) {
+    await parseReminder();
+    if (!parsedData) return;
+  }
+
+  const btn = document.getElementById('saveBtn');
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+
+  const reminder = {
+    id: Date.now().toString(),
+    sbId: null,
+    title: parsedData.title,
+    description: parsedData.description,
+    date: parsedData.date,
+    time: parsedData.time,
+    datetime: `${parsedData.date}T${parsedData.time}:00`,
+    status: 'scheduled',
+    calEventId: null,
+    createdAt: new Date().toISOString()
+  };
+
+  // Salvar no Supabase
+  try {
+    reminder.sbId = await saveReminderToSupabase(reminder);
+  } catch(e) { console.warn('Supabase save error:', e); }
+
+  // Salvar no Google Calendar
+  if (accessToken) {
+    try {
+      reminder.calEventId = await addToGoogleCalendar(reminder);
+      if (reminder.sbId) await updateSupabaseStatus(reminder.sbId, 'scheduled');
+      showNotice('parseNotice', 'ok', '✓ Salvo na agenda do Google!');
+    } catch(e) {
+      showNotice('parseNotice', 'warn', 'Salvo! (sem sincronizar Google Calendar)');
+    }
+  } else {
+    showNotice('parseNotice', 'info', 'Salvo! Conecte o Google para sincronizar a agenda.');
+  }
+
+  reminders.push(reminder);
+  saveLocalReminders();
+  scheduleAlarm(reminder);
+  renderReminders();
+
+  document.getElementById('reminderInput').value = '';
+  parsedData = null;
+  btn.innerHTML = 'Salvar na agenda';
+  btn.disabled = false;
+}
+
+async function addToGoogleCalendar(reminder) {
+  const start = new Date(reminder.datetime);
+  const end = new Date(start.getTime() + 60 * 60 * 1000);
+  const event = {
+    summary: reminder.title,
+    description: reminder.description,
+    start: { dateTime: start.toISOString(), timeZone: 'America/Sao_Paulo' },
+    end: { dateTime: end.toISOString(), timeZone: 'America/Sao_Paulo' },
+    reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 0 }, { method: 'popup', minutes: 10 }] }
+  };
+  const resp = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify(event)
+  });
+  if (!resp.ok) throw new Error('Calendar API error');
+  const data = await resp.json();
+  return data.id;
+}
+
+// ---- ALARM ----
+function scheduleAlarm(reminder) {
+  const delay = new Date(reminder.datetime).getTime() - Date.now();
+  if (delay <= 0) { if (delay > -3600000) triggerAlarm(reminder); return; }
+  if (delay < 2147483647) setTimeout(() => triggerAlarm(reminder), delay);
+}
+
+function triggerAlarm(reminder) {
+  if (reminder.status === 'done') return;
+  reminder.status = 'ringing';
+  saveLocalReminders();
+  renderReminders();
+
+  currentAlarmId = reminder.id;
+  document.getElementById('alarmTitle').textContent = reminder.title;
+  document.getElementById('alarmDesc').textContent = reminder.description || new Date(reminder.datetime).toLocaleString('pt-BR');
+  document.getElementById('alarmOverlay').classList.add('visible');
+  sendNotification(reminder.title, reminder.description || 'Hora do seu lembrete!');
+
+  alarmIntervals[reminder.id] = setInterval(() => {
+    if (reminder.status === 'ringing') {
+      sendNotification('🔔 ' + reminder.title, 'Toque em desligar para encerrar.');
+      document.getElementById('alarmOverlay').classList.add('visible');
+      document.getElementById('alarmTitle').textContent = reminder.title;
+      currentAlarmId = reminder.id;
+    }
+  }, 10 * 60 * 1000);
+}
+
+function sendNotification(title, body) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, { body, requireInteraction: true });
+  }
+}
+
+async function dismissAlarm() {
+  document.getElementById('alarmOverlay').classList.remove('visible');
+  if (!currentAlarmId) return;
+
+  const reminder = reminders.find(r => r.id === currentAlarmId);
+  if (!reminder) return;
+
+  clearInterval(alarmIntervals[currentAlarmId]);
+  delete alarmIntervals[currentAlarmId];
+  reminder.status = 'done';
+
+  // Marcar como dismissed no Supabase (celular também vai ver)
+  if (reminder.sbId) await updateSupabaseStatus(reminder.sbId, 'done', true);
+
+  // Deletar do Google Calendar
+  if (reminder.calEventId && accessToken) deleteFromGoogleCalendar(reminder.calEventId);
+
+  currentAlarmId = null;
+  saveLocalReminders();
+  renderReminders();
+}
+
+async function deleteFromGoogleCalendar(eventId) {
+  try {
+    await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + accessToken }
+    });
+  } catch(e) { console.warn('Could not delete calendar event', e); }
+}
+
+async function deleteReminder(id) {
+  const reminder = reminders.find(r => r.id === id);
+  if (!reminder) return;
+  clearInterval(alarmIntervals[id]);
+  delete alarmIntervals[id];
+  if (reminder.calEventId && accessToken) deleteFromGoogleCalendar(reminder.calEventId);
+  if (reminder.sbId) await updateSupabaseStatus(reminder.sbId, 'done', true);
+  reminders = reminders.filter(r => r.id !== id);
+  saveLocalReminders();
+  renderReminders();
+}
+
+function checkScheduledReminders() {
+  const now = Date.now();
+  reminders.forEach(r => {
+    if (r.status === 'scheduled') {
+      const t = new Date(r.datetime).getTime();
+      if (now >= t && now - t < 60000) triggerAlarm(r);
+    }
+  });
+}
+
+// ---- RENDER ----
+function renderReminders() {
+  const list = document.getElementById('remindersList');
+  const active = reminders.filter(r => r.status !== 'done');
+  const done = reminders.filter(r => r.status === 'done').slice(-3);
+  const all = [...active, ...done];
+
+  if (all.length === 0) { list.innerHTML = '<div class="empty">Nenhum lembrete ainda</div>'; return; }
+
+  list.innerHTML = all.map(r => {
+    const dt = new Date(r.datetime);
+    const formatted = dt.toLocaleString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const badgeClass = r.status === 'ringing' ? 'ringing' : r.status === 'done' ? 'done' : 'scheduled';
+    const badgeLabel = r.status === 'ringing' ? '🔔 Tocando' : r.status === 'done' ? '✓ Encerrado' : '⏰ Agendado';
+    const cardClass = r.status === 'ringing' ? 'ringing' : r.status === 'scheduled' ? 'active' : '';
+    const calIcon = r.calEventId ? '📅 Google Calendar' : r.sbId ? '☁️ Supabase' : '💾 Local';
+    return `<div class="reminder-card ${cardClass}">
+      <div class="reminder-info">
+        <div class="reminder-title">${r.title}</div>
+        <div class="reminder-meta"><span>${formatted}</span><span>${calIcon}</span></div>
+        <div style="margin-top:6px"><span class="badge ${badgeClass}">${badgeLabel}</span></div>
+      </div>
+      <div class="reminder-actions">
+        ${r.status === 'ringing' ? `<button class="icon-btn stop" onclick="dismissFromCard('${r.id}')" title="Desligar alarme">✕</button>` : ''}
+        ${r.status !== 'done' ? `<button class="icon-btn" onclick="deleteReminder('${r.id}')" title="Excluir">🗑</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function dismissFromCard(id) { currentAlarmId = id; dismissAlarm(); }
+
+// ---- LOCAL STORAGE ----
+function saveLocalReminders() { localStorage.setItem('audens_reminders', JSON.stringify(reminders)); }
+function loadLocalReminders() {
+  try { reminders = JSON.parse(localStorage.getItem('audens_reminders') || '[]'); } catch { reminders = []; }
+}
+
+// ---- UTILS ----
+function showNotice(containerId, type, html) {
+  const icons = { info: 'ℹ', warn: '⚠', ok: '✓', err: '✕' };
+  document.getElementById(containerId).innerHTML = `<div class="notice ${type}"><span>${icons[type]}</span><span>${html}</span></div>`;
+}
+</script>
+</body>
+</html>
